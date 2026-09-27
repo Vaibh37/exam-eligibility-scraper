@@ -4,6 +4,7 @@ const profileSchema = {
   category: "GENERAL | EWS | OBC-NCL | SC | ST",
   pwbd: "boolean",
   domicileState: "Maharashtra",
+  currentlyEnrolledAtBits: "boolean",
   currentInstitution: "string or empty string",
   class12: {
     status: "passed | appearing",
@@ -28,6 +29,7 @@ const exampleProfile = {
   category: "GENERAL",
   pwbd: false,
   domicileState: "Maharashtra",
+  currentlyEnrolledAtBits: false,
   currentInstitution: "",
   class12: {
     status: "passed",

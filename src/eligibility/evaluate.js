@@ -430,13 +430,29 @@ function evaluateBitsat(profile) {
     })
   ];
 
-  if (profile.currentInstitution) {
+  if (profile.currentlyEnrolledAtBits === true) {
+    checks.push(
+      fail(
+        "current-bits-student",
+        "Current BITS enrolment",
+        "Students currently enrolled at a BITS campus are not eligible for BITSAT 2026."
+      )
+    );
+  } else if (profile.currentlyEnrolledAtBits === false) {
+    checks.push(
+      pass(
+        "current-bits-student",
+        "Current BITS enrolment",
+        "Student is not currently enrolled at a BITS campus."
+      )
+    );
+  } else if (profile.currentInstitution) {
     if (/\bbits\b|birla institute of technology and science/i.test(profile.currentInstitution)) {
       checks.push(
         fail(
           "current-bits-student",
           "Current BITS enrolment",
-          "Students currently enrolled at a BITS campus are not eligible for BITSAT 2026."
+          "Current institution appears to be a BITS campus."
         )
       );
     } else {
@@ -453,7 +469,7 @@ function evaluateBitsat(profile) {
       unknown(
         "current-bits-student",
         "Current BITS enrolment",
-        "Provide currentInstitution, or an empty value if the student is not enrolled at BITS."
+        "Provide currentlyEnrolledAtBits as true/false, or provide currentInstitution."
       )
     );
   }

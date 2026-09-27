@@ -118,6 +118,11 @@ function normalizeProfile(input = {}) {
     domicileState: input.domicileState
       ? String(input.domicileState).trim().toLowerCase()
       : null,
+    currentlyEnrolledAtBits:
+      input.currentlyEnrolledAtBits === undefined ||
+      input.currentlyEnrolledAtBits === null
+        ? null
+        : Boolean(input.currentlyEnrolledAtBits),
     currentInstitution: input.currentInstitution
       ? String(input.currentInstitution).trim()
       : null,

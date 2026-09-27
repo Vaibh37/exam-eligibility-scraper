@@ -121,3 +121,45 @@ test("evaluateAll returns grouped discovery summary", () => {
   assert.equal(result.results.length, 5);
   assert.ok(result.summary.eligible.includes("jee-main"));
 });
+
+
+test("NEET does not apply obsolete Class XII PCB percentage thresholds", () => {
+  const result = evaluateExam("neet-ug", {
+    dob: "2008-01-01",
+    nationality: "Indian",
+    category: "GENERAL",
+    pwbd: true,
+    class12: {
+      status: "passed",
+      passingYear: 2026,
+      subjects: ["Physics", "Chemistry", "Biology", "English"],
+      marksBySubject: {
+        Physics: 42,
+        Chemistry: 42,
+        Biology: 42,
+        English: 60
+      }
+    }
+  });
+
+  assert.equal(result.status, "eligible");
+  assert.equal(
+    result.checks.some(check => check.id === "pcb-marks"),
+    false
+  );
+});
+
+test("NEET 2026 source points to the current official bulletin", () => {
+  const result = evaluateExam("neet-ug", {
+    dob: "2008-01-01",
+    nationality: "Indian",
+    category: "GENERAL",
+    class12: {
+      status: "passed",
+      passingYear: 2026,
+      subjects: ["Physics", "Chemistry", "Biology", "English"]
+    }
+  });
+
+  assert.match(result.exam.sourceUrl, /202602231394640855\.pdf$/);
+});

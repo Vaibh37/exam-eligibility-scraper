@@ -119,77 +119,6 @@ function ageEligibleForNeet(dob) {
   return date <= new Date("2009-12-31T23:59:59Z");
 }
 
-function evaluateNeetMarks(profile) {
-  const status = profile.class12.status;
-  const pcb =
-    profile.class12.pcbPercent ??
-    (() => {
-      const p = getMark(profile, "physics");
-      const c = getMark(profile, "chemistry");
-      const b =
-        getMark(profile, "biology") ?? getMark(profile, "biotechnology");
-      if ([p, c, b].some(value => value === null)) return null;
-      return (p + c + b) / 3;
-    })();
-
-  if (pcb === null) {
-    if (status === "appearing") {
-      return provisional(
-        "pcb-marks",
-        "PCB/Biotechnology marks",
-        "Marks are not available yet; the minimum qualifying-examination marks must be met when results are declared."
-      );
-    }
-
-    return unknown(
-      "pcb-marks",
-      "PCB/Biotechnology marks",
-      "Provide PCB/Biotechnology aggregate percentage or subject-wise marks."
-    );
-  }
-
-  const relaxedCategory =
-    ["SC", "ST", "OBC-NCL"].includes(profile.category) || profile.pwbd;
-
-  if (pcb >= 50) {
-    return pass(
-      "pcb-marks",
-      "PCB/Biotechnology marks",
-      `PCB/Biotechnology aggregate is ${pcb.toFixed(2)}%, meeting the general 50% threshold.`
-    );
-  }
-
-  if (pcb < 40) {
-    return fail(
-      "pcb-marks",
-      "PCB/Biotechnology marks",
-      `PCB/Biotechnology aggregate is ${pcb.toFixed(2)}%, below the 40% threshold used for relaxed categories.`
-    );
-  }
-
-  if (!profile.category && !profile.pwbd) {
-    return unknown(
-      "pcb-marks",
-      "PCB/Biotechnology marks",
-      `PCB/Biotechnology aggregate is ${pcb.toFixed(2)}%. Category/PwBD status is needed to determine whether the 40% or 50% threshold applies.`
-    );
-  }
-
-  if (relaxedCategory) {
-    return pass(
-      "pcb-marks",
-      "PCB/Biotechnology marks",
-      `PCB/Biotechnology aggregate is ${pcb.toFixed(2)}%, meeting the 40% threshold used for the supplied category/PwBD status.`
-    );
-  }
-
-  return fail(
-    "pcb-marks",
-    "PCB/Biotechnology marks",
-    `PCB/Biotechnology aggregate is ${pcb.toFixed(2)}%, below the 50% threshold for General/EWS candidates.`
-  );
-}
-
 function evaluateNeet(profile) {
   const checks = [];
 
@@ -259,7 +188,6 @@ function evaluateNeet(profile) {
     );
   }
 
-  checks.push(evaluateNeetMarks(profile));
 
   return { checks };
 }

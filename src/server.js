@@ -64,6 +64,14 @@ app.post("/api/eligibility", (req, res, next) => {
   }
 });
 
+app.post("/api/discover", (req, res, next) => {
+  try {
+    res.json(evaluateAll(req.body || {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/eligibility/:id", (req, res, next) => {
   try {
     res.json(evaluateExam(req.params.id, req.body || {}));

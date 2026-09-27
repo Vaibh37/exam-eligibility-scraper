@@ -4,6 +4,7 @@
   "category": "GENERAL",
   "pwbd": false,
   "domicileState": "Maharashtra",
+  "currentlyEnrolledAtBits": false,
   "currentInstitution": "Example Junior College",
   "class12": {
     "status": "passed",

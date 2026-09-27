@@ -18,12 +18,14 @@ const rules = {
     name: "NEET UG 2026",
     scope: "eligibility-to-appear",
     sourceUrl:
-      "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602081576322299.pdf",
+      "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf",
     reviewedFor: "2026",
     notes: [
       "Candidate must complete 17 years of age on or before 31 December 2026.",
       "There is no upper age limit.",
-      "Qualifying-examination and category rules can contain special cases; verify the current NTA/NMC bulletin before final admission decisions."
+      "For eligibility to appear under the 2026 bulletin/GME Regulations 2023, the qualifying route requires passing 10+2/equivalent with Physics, Chemistry, Biology/Biotechnology and English; this engine does not impose the older Class XII PCB percentage thresholds.",
+      "After the exam, NEET qualifying percentiles are separate: General/GEN-EWS 50th percentile, SC/ST/OBC-NCL 40th percentile, PwBD General/GEN-EWS 45th percentile, and PwBD SC/ST/OBC-NCL 40th percentile.",
+      "Qualifying-examination and counselling rules can contain special cases; verify the current NTA/NMC bulletin before final admission decisions."
     ]
   },
 

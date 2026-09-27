@@ -1,13 +1,15 @@
 {
   "name": "exam-eligibility-scraper",
-  "version": "1.0.0",
-  "description": "Evidence-first scraper for official Indian entrance-exam eligibility sources",
+  "version": "2.0.0",
+  "description": "Official-source exam scraper and explainable eligibility engine for Indian entrance exams",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/cli.js",
-    "scrape": "node src/cli.js",
-    "scrape:all": "node src/cli.js all",
+    "scrape": "node src/cli.js scrape",
+    "scrape:all": "node src/cli.js scrape all",
+    "eligibility": "node src/cli.js eligibility",
+    "schema": "node src/cli.js schema",
     "api": "node src/server.js",
     "test": "node --test"
   },

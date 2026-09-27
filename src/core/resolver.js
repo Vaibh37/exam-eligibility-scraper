@@ -46,15 +46,19 @@ function rankLinks(links, source) {
     .sort((a, b) => b.score - a.score);
 }
 
-async function resolveDocument(source) {
-  if (source.documentUrl) {
-    return {
-      url: source.documentUrl,
-      type: source.documentType || (isPdfUrl(source.documentUrl) ? "pdf" : "html"),
-      discoveredFrom: null
-    };
-  }
+function fallback(source, cause) {
+  if (!source.fallbackDocumentUrl) throw cause;
 
+  return {
+    url: source.fallbackDocumentUrl,
+    type: isPdfUrl(source.fallbackDocumentUrl) ? "pdf" : "unknown",
+    discoveredFrom: source.discoveryPage || null,
+    usedFallback: true,
+    discoveryError: cause?.message || null
+  };
+}
+
+async function discoverDocument(source) {
   const listingResponse = await getText(source.discoveryPage);
   const listing = parseHtml(listingResponse.data, listingResponse.url);
   const ranked = rankLinks(listing.links, source);
@@ -71,7 +75,8 @@ async function resolveDocument(source) {
     return {
       url: candidate.url,
       type: "pdf",
-      discoveredFrom: listingResponse.url
+      discoveredFrom: listingResponse.url,
+      usedFallback: false
     };
   }
 
@@ -81,7 +86,8 @@ async function resolveDocument(source) {
     return {
       url: candidateResponse.url,
       type: "pdf",
-      discoveredFrom: listingResponse.url
+      discoveredFrom: listingResponse.url,
+      usedFallback: false
     };
   }
 
@@ -93,7 +99,8 @@ async function resolveDocument(source) {
     return {
       url: pdf.url,
       type: "pdf",
-      discoveredFrom: candidateResponse.url
+      discoveredFrom: candidateResponse.url,
+      usedFallback: false
     };
   }
 
@@ -113,16 +120,34 @@ async function resolveDocument(source) {
     return {
       url: likelyDownload.url,
       type: isPdfUrl(likelyDownload.url) ? "pdf" : "unknown",
-      discoveredFrom: candidateResponse.url
+      discoveredFrom: candidateResponse.url,
+      usedFallback: false
     };
   }
 
-  // Some official brochures are themselves HTML documents.
   return {
     url: candidateResponse.url,
     type: "html",
-    discoveredFrom: listingResponse.url
+    discoveredFrom: listingResponse.url,
+    usedFallback: false
   };
+}
+
+async function resolveDocument(source) {
+  if (source.documentUrl) {
+    return {
+      url: source.documentUrl,
+      type: source.documentType || (isPdfUrl(source.documentUrl) ? "pdf" : "html"),
+      discoveredFrom: null,
+      usedFallback: false
+    };
+  }
+
+  try {
+    return await discoverDocument(source);
+  } catch (error) {
+    return fallback(source, error);
+  }
 }
 
 module.exports = {

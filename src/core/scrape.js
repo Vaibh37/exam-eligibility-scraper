@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const sources = require("../config/sources");
 const { getBuffer, sleep } = require("./http");
 const { parseHtml } = require("./html");
@@ -14,6 +15,11 @@ async function readResolvedDocument(resolved) {
     contentType.includes("application/pdf") ||
     isPdfUrl(response.url);
 
+  const sha256 = crypto
+    .createHash("sha256")
+    .update(response.data)
+    .digest("hex");
+
   if (pdfLike) {
     const parsed = await parsePdf(response.data);
     return {
@@ -22,6 +28,8 @@ async function readResolvedDocument(resolved) {
       status: response.status,
       title: parsed.info?.Title || null,
       pages: parsed.pages,
+      sha256,
+      bytes: response.data.length,
       text: normalizeText(parsed.text)
     };
   }
@@ -35,6 +43,8 @@ async function readResolvedDocument(resolved) {
     status: response.status,
     title: parsed.title,
     pages: null,
+    sha256,
+    bytes: response.data.length,
     text: normalizeText(parsed.text)
   };
 }
@@ -78,11 +88,16 @@ async function scrapeExam(id) {
       discoveredFrom: resolved.discoveredFrom,
       documentUrl: document.url,
       documentType: document.type,
-      httpStatus: document.status
+      httpStatus: document.status,
+      usedFallback: Boolean(resolved.usedFallback),
+      discoveryError: resolved.discoveryError || null
     },
     document: {
       title: document.title,
-      pages: document.pages
+      pages: document.pages,
+      bytes: document.bytes,
+      sha256: document.sha256,
+      extractedTextLength: document.text.length
     },
     ...extracted,
     scrapedAt: new Date().toISOString()

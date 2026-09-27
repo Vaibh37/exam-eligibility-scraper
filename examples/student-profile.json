@@ -1,0 +1,28 @@
+{
+  "dob": "2008-05-10",
+  "nationality": "Indian",
+  "category": "GENERAL",
+  "pwbd": false,
+  "domicileState": "Maharashtra",
+  "currentInstitution": "Example Junior College",
+  "class12": {
+    "status": "passed",
+    "passingYear": 2026,
+    "subjects": [
+      "Physics",
+      "Chemistry",
+      "Mathematics",
+      "English",
+      "Computer Science"
+    ],
+    "subjectCount": 5,
+    "marksBySubject": {
+      "Physics": 80,
+      "Chemistry": 82,
+      "Mathematics": 85,
+      "English": 90,
+      "Computer Science": 92
+    },
+    "aggregatePercent": 85.8
+  }
+}

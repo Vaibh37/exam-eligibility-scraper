@@ -1,0 +1,24 @@
+{
+  "name": "exam-eligibility-scraper",
+  "version": "1.0.0",
+  "description": "Evidence-first scraper for official Indian entrance-exam eligibility sources",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/cli.js",
+    "scrape": "node src/cli.js",
+    "scrape:all": "node src/cli.js all",
+    "api": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20.18"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "cheerio": "^1.1.2",
+    "express": "^5.1.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "license": "MIT"
+}

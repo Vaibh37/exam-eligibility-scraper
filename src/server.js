@@ -1,11 +1,21 @@
 const express = require("express");
-const { scrapeExam, scrapeAll, listExams, sources } = require("./index");
+const {
+  scrapeExam,
+  scrapeAll,
+  listExams,
+  sources,
+  evaluateExam,
+  evaluateAll,
+  listEligibilityRules,
+  profileSchema,
+  exampleProfile
+} = require("./index");
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "64kb" }));
+app.use(express.json({ limit: "128kb" }));
 
 app.get("/health", (_, res) => {
   res.json({
@@ -38,6 +48,30 @@ app.get("/api/exams/:id", (req, res) => {
   });
 });
 
+app.get("/api/eligibility/rules", (_, res) => {
+  res.json({ rules: listEligibilityRules() });
+});
+
+app.get("/api/eligibility/schema", (_, res) => {
+  res.json({ schema: profileSchema, example: exampleProfile });
+});
+
+app.post("/api/eligibility", (req, res, next) => {
+  try {
+    res.json(evaluateAll(req.body || {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/eligibility/:id", (req, res, next) => {
+  try {
+    res.json(evaluateExam(req.params.id, req.body || {}));
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post("/api/scrape/:id", async (req, res, next) => {
   try {
     const result = await scrapeExam(req.params.id);
@@ -61,7 +95,7 @@ app.use((error, req, res, next) => {
 
   const unknownExam = /^Unknown exam/.test(error.message);
 
-  res.status(unknownExam ? 404 : 502).json({
+  res.status(unknownExam ? 404 : 400).json({
     error: error.message
   });
 });

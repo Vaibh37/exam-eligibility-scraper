@@ -1,18 +1,23 @@
-# Exam Eligibility Scraper
+# Exam Eligibility Scraper + Discovery Engine
 
-A reusable Node.js service for discovering official entrance-exam bulletins, downloading/parsing public PDFs, and normalizing eligibility-related information into one JSON shape.
+A standalone Node.js service that:
 
-Built so another backend can clone it, run it as a CLI, or call it over HTTP.
+1. finds official exam information/bulletin sources,
+2. downloads and parses HTML/PDF documents,
+3. extracts eligibility evidence and important text,
+4. keeps reviewed 2026 eligibility rules separate from raw scraping,
+5. accepts a student's profile,
+6. returns which supported exams match, which do not, what information is missing, and why.
 
-## Built-in adapters
+It is designed to be cloned into or run beside an existing student-discovery backend.
 
-- JEE Main — NTA
-- NEET UG — NTA
-- CUET UG — NTA
-- MHT-CET — Maharashtra State CET Cell
-- BITSAT — BITS Pilani
+## Supported exams
 
-The adapters use official public sources only. Sites and bulletin layouts can change, so every result includes source URLs and extraction evidence rather than pretending heuristic parsing is infallible.
+- JEE Main 2026 — NTA
+- NEET UG 2026 — NTA
+- CUET UG 2026 — NTA
+- MHT-CET 2026 — Maharashtra State CET Cell
+- BITSAT 2026 — BITS Pilani
 
 ## Quick start
 
@@ -20,88 +25,243 @@ The adapters use official public sources only. Sites and bulletin layouts can ch
 git clone https://github.com/Vaibh37/exam-eligibility-scraper.git
 cd exam-eligibility-scraper
 npm install
-npm run scrape:all
-```
-
-Run the API:
-
-```bash
+npm test
 npm run api
 ```
 
-Then:
+Server starts on:
+
+```text
+http://localhost:3001
+```
+
+## Student discovery
+
+The easiest integration is one request:
+
+```http
+POST /api/discover
+Content-Type: application/json
+```
+
+Example body:
+
+```json
+{
+  "dob": "2008-05-10",
+  "nationality": "Indian",
+  "category": "GENERAL",
+  "pwbd": false,
+  "domicileState": "Maharashtra",
+  "currentlyEnrolledAtBits": false,
+  "currentInstitution": "Example Junior College",
+  "class12": {
+    "status": "passed",
+    "passingYear": 2026,
+    "subjects": [
+      "Physics",
+      "Chemistry",
+      "Mathematics",
+      "English",
+      "Computer Science"
+    ],
+    "subjectCount": 5,
+    "marksBySubject": {
+      "Physics": 80,
+      "Chemistry": 82,
+      "Mathematics": 85,
+      "English": 90,
+      "Computer Science": 92
+    }
+  }
+}
+```
+
+The response groups exams into:
+
+```text
+eligible
+provisionally_eligible
+needs_more_info
+ineligible
+```
+
+Every exam contains individual checks and plain-English reasons, so the frontend can show things like:
+
+```text
+JEE Main       eligible
+CUET UG        eligible
+BITSAT         eligible
+NEET UG        ineligible — Biology/Biotechnology missing
+MHT-CET        eligible — PCM route
+```
+
+## API
 
 ```text
 GET  /health
 GET  /api/exams
 GET  /api/exams/:id
+
+GET  /api/eligibility/schema
+GET  /api/eligibility/rules
+POST /api/eligibility
+POST /api/eligibility/:id
+POST /api/discover
+
 POST /api/scrape/:id
 POST /api/scrape
 ```
 
-Example:
+Full API examples are in [docs/API.md](docs/API.md).
+
+## CLI
+
+Scrape all configured official sources:
 
 ```bash
-curl -X POST http://localhost:3001/api/scrape/jee-main
+npm run scrape:all
 ```
 
-## Output
+Scrape one exam:
 
-Each adapter returns a common shape:
-
-```json
-{
-  "id": "jee-main",
-  "name": "JEE Main",
-  "conductingBody": "National Testing Agency",
-  "officialWebsite": "https://jeemain.nta.nic.in/",
-  "source": {
-    "pageUrl": "...",
-    "documentUrl": "...",
-    "documentType": "pdf"
-  },
-  "eligibility": {
-    "age": [],
-    "qualification": [],
-    "subjects": [],
-    "marks": [],
-    "passingYear": [],
-    "attempts": []
-  },
-  "dates": [],
-  "fees": [],
-  "evidence": [],
-  "scrapedAt": "..."
-}
+```bash
+npm run scrape -- jee-main
 ```
 
-## Integrating into another backend
+Check a student profile:
 
-Use it as a library:
+```bash
+npm run eligibility -- examples/student-profile.json
+```
+
+Check only one exam:
+
+```bash
+npm run eligibility -- examples/student-profile.json bitsat
+```
+
+## Use as a library
 
 ```js
-const { scrapeExam } = require("./src");
+const {
+  scrapeExam,
+  evaluateExam,
+  evaluateAll
+} = require("./src");
 
-const result = await scrapeExam("jee-main");
-console.log(result.eligibility);
+const scraped = await scrapeExam("jee-main");
+
+const discovery = evaluateAll(studentProfile);
+
+const bitsat = evaluateExam("bitsat", studentProfile);
 ```
 
-Or keep this service separate and call its API from the existing app.
+## Architecture
 
-## Notes
+```text
+Official exam sites / PDFs
+          |
+          v
+   source resolver
+          |
+          v
+ HTML + PDF parsers
+          |
+          v
+ evidence extractor
+          |
+          +--------------------+
+          |                    |
+          v                    v
+ raw scrape output       reviewed 2026 rules
+                               |
+student profile ----------------+
+          |
+          v
+ explainable eligibility engine
+          |
+          v
+ API / CLI / existing backend
+```
 
-- No CAPTCHA bypassing, login bypassing, or access-control circumvention.
-- Requests use conservative timeouts/retries and a small delay between batch scrapes.
-- Extraction is evidence-first: the scraper keeps snippets and source URLs so a product can review/validate rules before using them for high-stakes eligibility decisions.
-- For production, store reviewed rules in your database instead of deciding a student's eligibility directly from freshly scraped text.
+The scraper and the rule engine are intentionally separated. A website layout change or a badly parsed PDF must not silently change a student's eligibility decision.
 
-## Commands
+## Source-change detection
+
+Scraped documents include a SHA-256 digest and source metadata. This makes it possible to detect when an official bulletin changes and review the rules before publishing updated eligibility logic.
+
+## Result meaning
+
+- **eligible** — all implemented exam-level checks pass.
+- **provisionally_eligible** — appearing/result-pending candidate can proceed, but a future marks/result condition still needs to be met.
+- **needs_more_info** — a blocking input required to decide is missing.
+- **ineligible** — at least one implemented blocking rule fails.
+
+## Important scope
+
+This project is primarily an **exam-discovery / eligibility-to-appear engine**.
+
+Admission can have additional university, counselling, domicile, reservation, programme, percentile, rank, document, and subject rules. CUET in particular has university/programme-specific eligibility. MHT-CET CAP rules also vary by course and candidature type.
+
+For a production student-facing product, always show the official source next to the result and keep a human-review step when a new bulletin or amendment appears.
+
+## Project structure
+
+```text
+src/
+  config/
+    sources.js
+  core/
+    extract.js
+    html.js
+    http.js
+    normalize.js
+    pdf.js
+    resolver.js
+    scrape.js
+  eligibility/
+    evaluate.js
+    profile.js
+    rules.js
+    schema.js
+  cli.js
+  index.js
+  server.js
+
+examples/
+  student-profile.json
+
+docs/
+  API.md
+  INTEGRATION.md
+
+test/
+  eligibility.test.js
+  extract.test.js
+  html.test.js
+  resolver.test.js
+```
+
+## Adding another exam
+
+Add its official discovery/document source in `src/config/sources.js`, then add a reviewed rule/evaluator in `src/eligibility`.
+
+The scraping layer is generic enough for many bulletin-style HTML/PDF sources; exam-specific eligibility logic stays explicit and testable.
+
+## Docker
 
 ```bash
-npm test
-npm run scrape:all
-npm run scrape -- jee-main
-npm run api
+docker build -t exam-eligibility-scraper .
+docker run -p 3001:3001 exam-eligibility-scraper
 ```
 
-MIT licensed.
+## Safety and responsible use
+
+The scraper only reads publicly accessible official sources. It does not bypass logins, CAPTCHAs, access controls, or rate limits.
+
+Eligibility rules can change. Treat the official bulletin and admitting authority as the final source of truth.
+
+## License
+
+MIT
